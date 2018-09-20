@@ -1,6 +1,6 @@
 ---
 title: "HW2 STA521 Fall18"
-author: '[Your Name Here, netid and github username here]'
+author: Min Chul Kim (NetID mk408, Github ID minchel93)
 date: "Due September 23, 2018 5pm"
 output:
   pdf_document: default
@@ -15,6 +15,12 @@ Readings: Chapters 3-4 in Weisberg Applied Linear Regression
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+library(dplyr)
+library(knitr)
+library(ggplot2)
+library(GGally)
+library(tibble)
+library(scales)
 ```
 
 This exercise involves the UN data set from `alr3` package. Install `alr3` and the `car` packages and load the data to answer the following questions adding your code in the code chunks.  Please add appropriate code to the chunks to suppress messages and warnings as needed once you are sure the code is working properly and remove instructions if no longer needed. Figures should have informative captions. Please switch the output to pdf for your final version to upload to Sakai. **Remove these instructions for final submission**
@@ -34,14 +40,27 @@ library(car)
 
 1. Create a summary of the data.  How many variables have missing data?  Which are quantitative and which are qualtitative?
 
-```{r}
+```{r Summary, Missing Data, and Quan vs. Qual}
+#Summary of Data
+summary(UN3)
 
+#Additional Missing Data
+help(UN3)
+
+#Data Type of Predictors
+sapply(UN3, class)
 ```
+
+According to the summary function, there are 58 data missing from ModernC, 1 missing from Change, 9 missing from PPgdp, 43 from Frate, 2 missing from Pop, 10 missing from Fertility, and 0 missing from Purban. 
+
+All the predictors are quantitative, according to the description of each predictor from R. 
 
 2. What is the mean and standard deviation of each quantitative predictor?  Provide in a nicely formatted table.
 
 ```{r}
-
+#Calculating the Mean and SD, w/ NA's Removed from Predictors
+kable(sapply(UN3, mean, na.rm = TRUE), format = "markdown", col.names = "Mean")
+kable(sapply(UN3, sd, na.rm = TRUE), format = "markdown", col.names = "Standard Deviation")
 ```
 
 
@@ -50,52 +69,142 @@ highlighting the relationships among the predictors. Comment
 on your findings regarding trying to predict `ModernC` from the other variables.  Are there potential outliers, nonlinear relationships or transformations that appear to be needed based on your graphical EDA?
 
 ```{r}
+#Removing NA's from Data
+UN3_No_NA = na.omit(UN3)
 
+#Predictors
+ModernC = UN3_No_NA$ModernC
+Change = UN3_No_NA$Change
+PPgdp = UN3_No_NA$PPgdp
+Frate = UN3_No_NA$Frate
+Pop = UN3_No_NA$Pop
+Fertility = UN3_No_NA$Fertility
+Purban = UN3_No_NA$Purban
+
+#Plots
+ggpairs(UN3_No_NA, progress = FALSE, title = "Scatterplot Matrix for Dataset UN3")
+
+ggplot(UN3_No_NA, aes(Change, ModernC)) + geom_point() + coord_cartesian(xlim = c(0,4.5), ylim = c(0,90))
+
+ggplot(UN3_No_NA, aes(PPgdp, ModernC)) + geom_point() + coord_cartesian(xlim = c(0,45000), ylim = c(0,90))
+
+ggplot(UN3_No_NA, aes(Pop, ModernC)) + geom_point()
+ggplot(UN3_No_NA, aes(log(Pop), ModernC)) + geom_point()
 ```
+
+By visual inspection, I was not able to identify potential outliers. However, I was able to observe that ModernC and PPgdp, PPgdp and Fertility, and PPgdp and Purban all have noticeable non-linear relationships, which may demand some transformations.
+
+As for the findings regarding predicting "ModernC" using other variables, I concluded that the predictor "Fertility" would be the best pre-transformed variable to predict the response, since "Fertility" has the most linear relationship, among the predictors, with "ModernC." I also concluded that "PPgdp" would be the worst pre-transformed variable to predict the response, since "PPgdp" has the most noticeable non-linear relationship, among the predictors, with "ModernC."
 
 ## Model Fitting
 
 4.  Use the `lm()` function to perform a multiple linear regression with `ModernC` as the response and all other variables as the predictors, using the formula `ModernC ~ .`, where the `.` includes all remaining variables in the dataframe.  Create  diagnostic residual plot from the linear model object and comment on results regarding assumptions.  How many observations are used in your model fitting?
 
 ```{r}
+#Multiplie Regression
+LM_ModernC = lm(ModernC ~ ., data = UN3_No_NA)
 
+#Multiple Regression Plot
+plot(LM_ModernC)
+
+#Observations Used in Multiple Regression
+nobs(LM_ModernC)
 ```
 
 5. Examine added variable plots `car::avPlot` or `car::avPlots`  for your model above. Are there any plots that suggest that transformations are needed for any of the terms in the model? Describe. Is it likely that any of the localities are influential for any of the terms?  Which localities?  Which terms?  
 
 ```{r}
-
+#Added Variable Plot
+avPlots(LM_ModernC)
 ```
+
+After visual inspection, I would like to suggest transforming the predictors Pop and PPgdp. The predictor "Pop" is too clustered around one section of the line, which I believe would become more spread out after a transformation. The predictor "PPgdp," on the other hand, has a large x-scale, which hints that transformation would significantly change the plot.
+
+As for the question about any of localities being influential for any of the terms, I would say China and India look like influential localities in ModernC|Others ~ Pop|Others graph. The presence of the two points is judged - subjectively - to be creating a positive relationship between the response and the predictor.
 
 6.  Using the Box-Tidwell  `car::boxTidwell` or graphical methods find appropriate transformations of the predictor variables to be used as predictors in the linear model.  If any predictors are negative, you may need to transform so that they are non-negative.  Describe your method and  the resulting transformations.
 
 
 ```{r}
+#Transformed Variables
+log_PPgdp = log(PPgdp)
+log_Pop = log(Pop)
+
+#New Data Frame
+UN3_No_NA_Log = UN3_No_NA %>%
+  rownames_to_column("Country") %>%
+  mutate("log_PPgdp" = log(PPgdp), "log_Pop" = log(Pop)) %>%
+  column_to_rownames("Country")
+
+
+LM_ModernC_Transformed = lm(ModernC ~ Change + log_PPgdp + Frate + log_Pop + Fertility + Purban, data = UN3_No_NA_Log)
+
+plot(LM_ModernC_Transformed)
+
+avPlots(LM_ModernC_Transformed)
+
+ggplot(UN3_No_NA, aes(Pop, ModernC)) + geom_point()
+ggplot(UN3_No_NA, aes(log_Pop, ModernC)) + geom_point()
+
+ggplot(UN3_No_NA, aes(PPgdp, ModernC)) + geom_point()
+ggplot(UN3_No_NA, aes(log_PPgdp, ModernC)) + geom_point()
+
+#BoxTidwell
+boxTidwell(ModernC ~ Pop + PPgdp, other.x = ~ Change + Frate + Fertility + Purban, data = UN3_No_NA)
 
 ```
+
+After running boxTidwell for predictors Pop and PPgdp, I obtained outputs that suggested statistical insignificance of doing predictors' transformations. However, to not to overlook suggestions about transformations I had made in #3 and #5, I log-transform the predictors, to see if I really end up with the outputs provided by boxTidwell. The results were different from what boxTidwell provided. Log transforming the predictors PPgdp and Pop actually altered the plots, providing avPlots with more linear trend, less pronounced residuals vs. fitted plot, and less pronounced residuals vs. leverage plot. Since log-transformations ended up improving many aspects of the linear model, despite the insignificance message from boxTidwell, I concluded to log-transform PPgdp and Pop.
 
 7. Given the selected transformations of the predictors, select a transformation of the response using `MASS::boxcox` or `car::boxCox` and justify.
 
 
 ```{r}
+#Plot for BoxCox
+boxCox(LM_ModernC_Transformed)
 
+powerTransform(LM_ModernC_Transformed)
 ```
 
+BoxCox transformation suggests that there does not need to be a transformation done on the response variable, because the interval for lambda includes 1. This indicates that the power on the response is not significantly different from 1.
+
 8.  Fit the regression using the transformed variables.  Provide residual plots and added variables plots and comment.  If you feel that you need additional transformations of either the response or predictors, repeat any steps until you feel satisfied.
+```{r}
+#Regression Using the Transformed Variables
+LM_ModernC_Transformed2 = lm(ModernC ~ log_Pop + log_PPgdp + Change + Frate + Fertility + Purban, data = UN3_No_NA_Log)
+
+summary(LM_ModernC_Transformed2)
+
+#Residual Plot
+plot(LM_ModernC_Transformed2)
+
+#Added Variables Plot
+avPlots(LM_ModernC_Transformed2)
+```
+
+
 
 9. Start by finding the best transformation of the response and then find transformations of the predictors.  Do you end up with a different model than in 8?
 
 
 ```{r}
+boxCox(LM_ModernC)
 
+avPlots(LM_ModernC)
+
+boxTidwell(ModernC ~ Pop + PPgdp, other.x = ~ Change + Frate + Purban + Fertility, data = UN3_No_NA)
 ```
 
 10.  Are there any outliers or influential points in the data?  Explain.  If so, refit the model after removing any outliers and comment on residual plots.
 
 
 ```{r}
-
+#Bonferroni Correction
+pval = 2*(1 - pt(abs(rstudent(LM_ModernC_Transformed)), LM_ModernC_Transformed$df - 1))
+rownames(UN3_No_NA_Log)[pval < .05/nrow(UN3_No_NA_Log)]
 ```
+
+According to Bonferroni correction, there are no outliers in the data and therefore no data need to be removed.
 
 ## Summary of Results
 
@@ -103,8 +212,21 @@ on your findings regarding trying to predict `ModernC` from the other variables.
 
 
 ```{r}
+#Multiple Regression with Purban Removed
+lm3 = lm(ModernC ~ Change + log_Pop + log_PPgdp + Frate + Fertility, data = UN3_No_NA_Log)
+
+#Justification of Removing Purban
+anova(lm3, LM_ModernC_Transformed2)
+
+
+confint_predictors = as.data.frame(confint(lm3))
+confint_predictors["log_PPgdp",] = exp(confint_predictors["log_PPgdp",])
+confint_predictors["log_Pop" ,] = exp(confint_predictors["log_Pop",])
+rownames(confint_predictors) = c("(Intercept)", "Change", "PPgdp", "Frate", "Pop", "Fertility")
+kable(confint_predictors)
 
 ```
+
 
 
 12. Provide a paragraph summarizing your final model  and findings suitable for the US envoy to the UN after adjusting for outliers or influential points.   You should provide a justification for any case deletions in your final model
@@ -122,3 +244,20 @@ on your findings regarding trying to predict `ModernC` from the other variables.
 
 
 14. For multiple regression with more than 2 predictors, say a full model given by `Y ~ X1 + X2 + ... Xp`   we create the added variable plot for variable `j` by regressing `Y` on all of the `X`'s except `Xj` to form `e_Y` and then regressing `Xj` on all of the other X's to form `e_X`.  Confirm that the slope in a manually constructed added variable plot for one of the predictors  in Ex. 10 is the same as the estimate from your model. 
+
+```{r}
+#e_Y on e_X
+e_Y = residuals(lm3)
+e_X = residuals(lm(Purban ~ Change + log_Pop + log_PPgdp + Frate + Fertility, data = UN3_No_NA_Log))
+
+#Slope Comparison
+lm_e_Y_on_e_X = lm(e_Y ~ e_X)
+LM_ModernC_Transformed2$coefficients["Purban"]
+
+x = data.frame(e_X = lm(e_Y ~ e_X)$coefficients["e_X"], LM_ModernC_Transformed2$coefficients["Purban"], row.names = "Coefficients")
+
+kable(x, col.names = c("e_X", "Model"), format = "markdown")
+
+#AVPlots
+avPlots(lm_e_Y_on_e_X)
+```

@@ -118,6 +118,7 @@ nobs(LM_ModernC)
 avPlots(LM_ModernC)
 ```
 
+Comment:
 After visual inspection, I would like to suggest transforming the predictors Pop and PPgdp. The predictor "Pop" is too clustered around one section of the line, which I believe would become more spread out after a transformation. The predictor "PPgdp," on the other hand, has a large x-scale, which hints that transformation would significantly change the plot.
 
 As for the question about any of localities being influential for any of the terms, I would say China and India look like influential localities in ModernC|Others ~ Pop|Others graph. The presence of the two points is judged - subjectively - to be creating a positive relationship between the response and the predictor.
@@ -136,24 +137,21 @@ UN3_No_NA_Log = UN3_No_NA %>%
   mutate("log_PPgdp" = log(PPgdp), "log_Pop" = log(Pop)) %>%
   column_to_rownames("Country")
 
-
+#Transformed Multipled Regression
 LM_ModernC_Transformed = lm(ModernC ~ Change + log_PPgdp + Frate + log_Pop + Fertility + Purban, data = UN3_No_NA_Log)
 
+#Plot for Regression
 plot(LM_ModernC_Transformed)
 
+#AVPlot for Regression
 avPlots(LM_ModernC_Transformed)
-
-ggplot(UN3_No_NA, aes(Pop, ModernC)) + geom_point()
-ggplot(UN3_No_NA, aes(log_Pop, ModernC)) + geom_point()
-
-ggplot(UN3_No_NA, aes(PPgdp, ModernC)) + geom_point()
-ggplot(UN3_No_NA, aes(log_PPgdp, ModernC)) + geom_point()
 
 #BoxTidwell
 boxTidwell(ModernC ~ Pop + PPgdp, other.x = ~ Change + Frate + Fertility + Purban, data = UN3_No_NA)
 
 ```
 
+Comment:
 After running boxTidwell for predictors Pop and PPgdp, I obtained outputs that suggested statistical insignificance of doing predictors' transformations. However, to not to overlook suggestions about transformations I had made in #3 and #5, I log-transform the predictors, to see if I really end up with the outputs provided by boxTidwell. The results were different from what boxTidwell provided. Log transforming the predictors PPgdp and Pop actually altered the plots, providing avPlots with more linear trend, less pronounced residuals vs. fitted plot, and less pronounced residuals vs. leverage plot. Since log-transformations ended up improving many aspects of the linear model, despite the insignificance message from boxTidwell, I concluded to log-transform PPgdp and Pop.
 
 7. Given the selected transformations of the predictors, select a transformation of the response using `MASS::boxcox` or `car::boxCox` and justify.
@@ -163,48 +161,68 @@ After running boxTidwell for predictors Pop and PPgdp, I obtained outputs that s
 #Plot for BoxCox
 boxCox(LM_ModernC_Transformed)
 
+#Lambda for Optimal Transformation
 powerTransform(LM_ModernC_Transformed)
+
+#Response Transformed Multiple Regression
+boxcox.transformed.lm = lm((ModernC)^(.7585897) ~ log_PPgdp + log_Pop + Change + Frate + Fertility + Purban, data = UN3_No_NA_Log)
+
+#Comparison of Response Transformed Multiple Regression to Predictors Transformed Regression
+plot(boxcox.transformed.lm)
+plot(LM_ModernC_Transformed)
 ```
 
-BoxCox transformation suggests that there does not need to be a transformation done on the response variable, because the interval for lambda includes 1. This indicates that the power on the response is not significantly different from 1.
+Comment:
+BoxCox transformation suggested applying a power of .7585897 to the response variable, which I have implemented by constructing a new linear regression model. However, I noticed that the residuals plots generated from the response-transformed model were not significantly different from those generated from predictors-only transformed model, compelling me to conclude that the response transformation is not being helpful in improving the model. I elected not to transform the response.
 
 8.  Fit the regression using the transformed variables.  Provide residual plots and added variables plots and comment.  If you feel that you need additional transformations of either the response or predictors, repeat any steps until you feel satisfied.
 ```{r}
 #Regression Using the Transformed Variables
-LM_ModernC_Transformed2 = lm(ModernC ~ log_Pop + log_PPgdp + Change + Frate + Fertility + Purban, data = UN3_No_NA_Log)
-
-summary(LM_ModernC_Transformed2)
+summary(LM_ModernC_Transformed)
 
 #Residual Plot
-plot(LM_ModernC_Transformed2)
+plot(LM_ModernC_Transformed)
 
 #Added Variables Plot
-avPlots(LM_ModernC_Transformed2)
+avPlots(LM_ModernC_Transformed)
 ```
 
+Note:
+Please note that since I elected only to transform the predictors, my regression of the transformed variables is identical to the regression model from #6.
 
+Comment:
+After the transformations were done on the predictors, I observed improvements in residuals plots. The red curve on "Residual vs. Fitted plot" became less pronounced; the right-tail of Normal Q-Q plot bent toward the perfect normal Q-Q line; the red curve on "Scale-Location" became less pronounced; and the red curve "Residuals vs. Leverage" is flatter. These evidences support that transformations done on the predictors improved the model.
 
 9. Start by finding the best transformation of the response and then find transformations of the predictors.  Do you end up with a different model than in 8?
 
 
 ```{r}
+#BoxCox
 boxCox(LM_ModernC)
 
+#AVPlot to Detect Predictors that Need Transformations
 avPlots(LM_ModernC)
 
+#BoxTidwell
 boxTidwell(ModernC ~ Pop + PPgdp, other.x = ~ Change + Frate + Purban + Fertility, data = UN3_No_NA)
 ```
+
+Comment:
+Unlike the previous problem, boxCox function for this question is not suggesting to transform the response, by including 1 in its 95% confidence interval - inclusion of 1 suggests that the power of the response is not statistically different from 1. As for BoxTidwell, it is once again informing me to not transform predictors, by providing me with relatively high probabilities - I selected to transform PPgdp and Pop after looking at the avPlot of linear model. *INCOMPLETE*
 
 10.  Are there any outliers or influential points in the data?  Explain.  If so, refit the model after removing any outliers and comment on residual plots.
 
 
 ```{r}
-#Bonferroni Correction
+#Bonferroni Correction for Outliers
 pval = 2*(1 - pt(abs(rstudent(LM_ModernC_Transformed)), LM_ModernC_Transformed$df - 1))
 rownames(UN3_No_NA_Log)[pval < .05/nrow(UN3_No_NA_Log)]
+
+#Cook's Distance for Influential Points
+plot(LM_ModernC_Transformed)
 ```
 
-According to Bonferroni correction, there are no outliers in the data and therefore no data need to be removed.
+According to Bonferroni correction, there are no outliers in the data and therefore no data need to be removed. As for influential points, cook's distance was absent on the residuals plot, which suggests that no data are influential points.
 
 ## Summary of Results
 
@@ -216,7 +234,7 @@ According to Bonferroni correction, there are no outliers in the data and theref
 lm3 = lm(ModernC ~ Change + log_Pop + log_PPgdp + Frate + Fertility, data = UN3_No_NA_Log)
 
 #Justification of Removing Purban
-anova(lm3, LM_ModernC_Transformed2)
+anova(lm3, LM_ModernC_Transformed)
 
 
 confint_predictors = as.data.frame(confint(lm3))
@@ -227,7 +245,8 @@ kable(confint_predictors)
 
 ```
 
-
+Comment:
+For the final model, I elected to remove Purban. I ran anova and observed that adding Purban to the linear model is not statistically significant. 
 
 12. Provide a paragraph summarizing your final model  and findings suitable for the US envoy to the UN after adjusting for outliers or influential points.   You should provide a justification for any case deletions in your final model
 
@@ -240,7 +259,9 @@ kable(confint_predictors)
 ## Methodology
 
     
-13. Prove that the intercept in the added variable scatter plot will always be zero.  _Hint:  use the fact that if $H$ is the project matrix which contains a column of ones, then $1_n^T (I - H) = 0$.  Use this to show that the sample mean of residuals will always be zero if there is an intercept._
+13. Prove that the intercept in the added variable scatter plot will always be zero.  _Hint:  use the fact that if $H$ is the project matrix which contains a column of ones, then $1_n^T (I - H) = 0$.  Use this to show that the sample mean of residuals will always be zero if there is an intercept.
+
+
 
 
 14. For multiple regression with more than 2 predictors, say a full model given by `Y ~ X1 + X2 + ... Xp`   we create the added variable plot for variable `j` by regressing `Y` on all of the `X`'s except `Xj` to form `e_Y` and then regressing `Xj` on all of the other X's to form `e_X`.  Confirm that the slope in a manually constructed added variable plot for one of the predictors  in Ex. 10 is the same as the estimate from your model. 
@@ -252,9 +273,9 @@ e_X = residuals(lm(Purban ~ Change + log_Pop + log_PPgdp + Frate + Fertility, da
 
 #Slope Comparison
 lm_e_Y_on_e_X = lm(e_Y ~ e_X)
-LM_ModernC_Transformed2$coefficients["Purban"]
+LM_ModernC_Transformed$coefficients["Purban"]
 
-x = data.frame(e_X = lm(e_Y ~ e_X)$coefficients["e_X"], LM_ModernC_Transformed2$coefficients["Purban"], row.names = "Coefficients")
+x = data.frame(e_X = lm(e_Y ~ e_X)$coefficients["e_X"], LM_ModernC_Transformed$coefficients["Purban"], row.names = "Coefficients")
 
 kable(x, col.names = c("e_X", "Model"), format = "markdown")
 

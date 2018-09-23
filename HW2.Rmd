@@ -306,7 +306,7 @@ Fertility: All else equal, 10\% increase in Fertility will decrease ModernC by .
 \
 
 Note: \
-I am aware that the unit for ModernC is percent, but the word "units" is being used here to avoid interpretation confusion. For example, if I say all else equal, 10\% increase in Frate will increase ModernC by .02\%. In this context, it can be interpreted in two ways. First, it can be translated as 10\% increase in Frate will make the new ModernC to be 1.0002 bigger than the original ModernC. Or, it can be translated as 10\% increase in Frate will make the new ModernC to be .02 units bigger than the original ModernC. Since I am referring to the latter case, I have decided to use "units."
+I am aware that the unit for ModernC is percent, but the word "units" is being used here to avoid interpretation confusion. For example, if I say all else equal, 10\% increase in Frate will increase ModernC by .02\%, in this context, it can be interpreted in two ways. First, it can be translated as 10\% increase in Frate will make the new ModernC to be 1.0002 bigger than the original ModernC. Or, it can be translated as 10\% increase in Frate will make the new ModernC to be .02 units bigger than the original ModernC. Since I am referring to the latter case, I have decided to use "units."
 
 
 

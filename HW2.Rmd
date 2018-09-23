@@ -88,7 +88,7 @@ By visual inspection, I was not able to identify potential outliers. However, I 
 
 \
 
-As for the findings regarding predicting ModernC using other variables, I concluded that the predictor Fertility would be the best pre-transformed variable to predict the response, since Fertility has the most linear relationship, among the predictors, with "ModernC." I also concluded that PPgdp would be the worst pre-transformed variable to predict the response, since PPgdp has the most noticeable non-linear relationship, among the predictors, with ModernC. $\\[2ex]$
+As for the findings regarding predicting ModernC using other variables, I concluded that the predictor Fertility would be the best pre-transformed variable to predict the response, since Fertility has the most linear relationship, among the predictors, with ModernC. I also concluded that PPgdp would be the worst pre-transformed variable to predict the response, since PPgdp has the most noticeable non-linear relationship, among the predictors, with ModernC. $\\[2ex]$
 
 ## Model Fitting
 
@@ -141,7 +141,8 @@ UN3_No_NA_Log = UN3_No_NA %>%
   column_to_rownames("Country")
 
 #Multiple Regression with Log.PPgdp and Log.Pop
-LM_ModernC_Transformed = lm(ModernC ~ Change + log_PPgdp + Frate + log_Pop + Fertility + Purban, data = UN3_No_NA_Log)
+LM_ModernC_Transformed = lm(ModernC ~ Change + log_PPgdp + Frate + log_Pop + Fertility + Purban,
+                            data = UN3_No_NA_Log)
 
 #Plot for Multiple Regression with Log.PPgdp and Log.Pop
 plot(LM_ModernC_Transformed)
@@ -195,7 +196,7 @@ Please note that since I elected only to transform the predictors, my regression
 
 \
 
-Comment:
+Comment: \
 After the transformations had been done to the original regression model, I observed improvements in residuals plots. The red curve on "Residual vs. Fitted plot" became less pronounced; the right-tail of Normal Q-Q plot bent toward the normal line; the red curve on "Scale-Location" became less pronounced; and the red curve "Residuals vs. Leverage" became flatter. These evidences support that transformations done to the predictors improved the model, at least in terms of residuals.
 
 \
@@ -237,7 +238,7 @@ plot(LM_ModernC_Transformed)
 ```
 
 Comment: \
-According to Bonferroni correction, there are no outliers in the data, and therefore no data need to be removed. As for influential points, cook's distance was absent on the residuals plot, which suggests that no data are influential points. $\\[2ex]$
+According to Bonferroni correction, there are no outliers in the data, and therefore no data need to be removed. As for influential points, cook's distance was absent on the residuals plot, which suggests that no data are influential points. For Bonferroni, the significance level used was 0.05. $\\[2ex]$
 
 ## Summary of Results
 
@@ -258,11 +259,12 @@ summary(lm3)
 confint_predictors = as.data.frame(confint(lm3))
 confint_predictors["log_Pop", ] = confint_predictors["log_Pop", ] * log(1.1)
 confint_predictors["log_PPgdp", ] = confint_predictors["log_PPgdp", ] * log(1.1)
-rownames(confint_predictors) = c("(Intercept)", "Change", "Pop (with 10% Increase)", "PPgdp (with 10% Increase)", "Frate", "Fertility")
+rownames(confint_predictors) = c("(Intercept)", "Change", 
+        "Pop (with 10% Increase)", "PPgdp (with 10% Increase)", "Frate", "Fertility")
 
 confint_predictors = confint_predictors %>%
    rownames_to_column("Pred") %>%
-  mutate(Estimate = c(4.10208, 4.69776, 1.44122, 4.85936, 0.19955, -9.27842)) %>%
+  mutate(Estimate = c(4.10208, 4.69776, 1.44122, 4.85936, 0.19955, -9.27842), "R^2" = c(0.6243)) %>%
    column_to_rownames("Pred")
 
 kable(confint_predictors, format = "markdown", digits = 2)
@@ -283,23 +285,28 @@ Intercept: When all the other predictors are equal to 0, ModernC will be equal t
 
 \
 
-Change: All else equal, 10\% increase in Change will increase ModernC by roghly .47.
+Change: All else equal, 10\% increase in Change will increase ModernC by roghly .47 units.
 
 \
 
-Pop: All else equal, 10\% increase in Pop will increase ModernC by roughly .14. 
+Pop: All else equal, 10\% increase in Pop will increase ModernC by roughly .14 units. 
 
 \
 
-PPgdp: All else equal, 10\% increase in PPgdp will increase ModernC by roghly .46.
+PPgdp: All else equal, 10\% increase in PPgdp will increase ModernC by roghly .46 units.
 
 \
 
-Frate: All else equal, 10\% increase in Frate will increase ModernC by .02. 
+Frate: All else equal, 10\% increase in Frate will increase ModernC by .02 units. 
 
 \
 
-Fertility: All else equal, 10\% increase in Fertility will decrease ModernC by .93. $\\[2ex]$
+Fertility: All else equal, 10\% increase in Fertility will decrease ModernC by .93 units.
+
+\
+
+Note: \
+I am aware that the unit for ModernC is percent, but the word "units" is being used here to avoid interpretation confusion. For example, if I say all else equal, 10\% increase in Frate will increase ModernC by .02\%. In this context, it can be interpreted in two ways. First, it can be translated as 10\% increase in Frate will make the new ModernC to be 1.0002 bigger than the original ModernC. Or, it can be translated as 10\% increase in Frate will make the new ModernC to be .02 units bigger than the original ModernC. Since I am referring to the latter case, I have decided to use "units."
 
 
 
@@ -312,7 +319,7 @@ Fertility: All else equal, 10\% increase in Fertility will decrease ModernC by .
 ```
 
 Paragraph: \
-After all the statistical analyses performed on the given data set, we have made a number of discoveries. The first finding is, there are no outliers and no influential points in the supplied data set, based on proven statistical methods. The second is, the data about percent of population that is urban, in 2001, was not helpful in predicting percent of unmarried women using a modern method of contraception, with all the other predictors present in the model; the predictor was removed in the final model. The third is, the relationships between ModernC and PPgdp and between ModernC and Pop were not linear, which means that the changes in PPgdp and Pop do not always change ModernC in a constant manner. Our last finding is, Fertility is seemed to have the highest non-neglegible effect on the ModernC, which may require some more study on it. 
+After all the statistical analyses performed on the given data set, we have made a number of discoveries. The first finding is, there are no outliers and no influential points in the supplied data set, based on proven statistical methods. The second is, the data about percent of population that is urban, in 2001, was not helpful in predicting percent of unmarried women using a modern method of contraception, with all the other predictors present in the model; Purban was, therefore, removed in the final model. The third is, the relationships between ModernC and PPgdp and between ModernC and Pop were not linear, which means that the changes in PPgdp and Pop do not always change ModernC in a constant manner. Our last finding is, Fertility is seemed to have the highest non-neglegible effect on the ModernC, which may require some more study on it. 
 
 \
 
@@ -338,7 +345,7 @@ Proof: \
 
 $$\hat{e}_{(Y)} = \hat{\beta_{0}} + \hat{\beta_{1}}e_{X_{j}} \\[2ex]$$
 
-Note that $\hat{e}_{(Y)} = (I-H)Y$, $\hat{e}_{X_j} = (I-H)X_j$ and $\hat{\beta_{0}} = \vec{1}_{n X 1}\hat{\beta_{0}}$. Hereafter, assume $\vec{1}_{n X 1} = \vec{1} \\[2ex]$
+Note that $\hat{e}_{(Y)} = (I-H)Y$ and $\hat{e}_{X_j} = (I-H)X_j$. Hereafter, assume $\vec{1}_{n X 1} = \vec{1} \\[2ex]$
 
 $$\hat{e}_{(Y)} = \hat{\beta_{0}} + \hat{\beta_{1}}e_{X_{j}} \\[2ex]$$
 
